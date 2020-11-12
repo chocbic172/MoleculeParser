@@ -8,7 +8,7 @@ MULTIPLIERS = ["undef", "di",  "tri",  "tetra", "penta", "hexa", "hepta", "octa"
 PREFIXES = ["cyclo", "hydroxy", "oxo", "carboxy", "oxycarbonyl", "anoyloxy", "formyl", "oxy", "amido", "amino", "imino", "phenyl",  "mercapto", "phosphino", "arsino", "fluoro", "chloro", "bromo", "iodo"]
 
 
-pattern = "(" + "|".join([x for x in RADICALS+SUFFIX+MULTIPLIERS+PREFIXES]) + ")"
+pattern = "(" + "|".join([x for x in RADICALS[::-1]+SUFFIX+MULTIPLIERS+PREFIXES]) + ")"
 
 
 class Token:
@@ -42,6 +42,20 @@ class Token:
                 self.structure[int(pos)] = self.structure[int(pos)][:2] + str(int(self.structure[int(pos)][2:])-a)
 
 
+def extract_ramifications(tokens):
+    for item in enumerate(tokens):
+        if item[1].type == "ALKYL":
+            b, c = 0, 0
+            for i in enumerate(list("1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane")):
+                if i[1] == "[": b += 1
+                if i[1] == "[" and b == 0:
+                    b += 1
+                    c = i[0]
+                if i[1] == "]": b -= 1
+                print(b)
+                if i[1] == "]" and b == 0: print(str(i[0]),str(c))
+
+
 def tokenize(string):
     string = string.split("-")
     tokenized = []
@@ -51,7 +65,7 @@ def tokenize(string):
     for item in enumerate(tokenized):
         tokenized[item[0]] = Token(item[1])
 
-    types = [a.type for a in tokenized]
+    types = [a.name for a in tokenized]
 
     print(types)
 
@@ -79,4 +93,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("1,4-dimethylhex-1,3-diene"))
+    print(tokenize("1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane"))
