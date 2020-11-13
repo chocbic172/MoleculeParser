@@ -42,25 +42,11 @@ class Token:
                 self.structure[int(pos)] = self.structure[int(pos)][:2] + str(int(self.structure[int(pos)][2:])-a)
 
 
-def extract_ramifications(tokens):
-    for item in enumerate(tokens):
-        if item[1].type == "ALKYL":
-            b, c = 0, 0
-            for i in enumerate(list("1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane")):
-                if i[1] == "[": b += 1
-                if i[1] == "[" and b == 0:
-                    b += 1
-                    c = i[0]
-                if i[1] == "]": b -= 1
-                print(b)
-                if i[1] == "]" and b == 0: print(str(i[0]),str(c))
-
-
 def tokenize(string):
-    string = string.split("-")
+    string = ['1,2-di[1-ethyl-3-', '[2-methyl]', 'propyl]heptylcyclobutane']
     tokenized = []
     for item in string:
-        tokenized += ([x for x in re.split(pattern, item) if x != ""])
+        tokenized += [([x for x in re.split(pattern, item) if x != ""])]
 
     for item in enumerate(tokenized):
         tokenized[item[0]] = Token(item[1])
@@ -93,4 +79,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane"))
+    print(tokenize("1,2-dimethylethane"))
