@@ -25,7 +25,7 @@ class Token:
             else: self.type = "POSITION"
 
         self.structure = []
-        self.ramifications = []
+        self.ramifications = ""
 
     def __str__(self):
         return self.type + ":" + self.name
@@ -33,22 +33,35 @@ class Token:
     def decode(self, radical, positions=None, multiplier="undef"):
         self.structure = self.structure = ["CH3"] + ["CH2" for x in range(RADICALS.index(radical.name)-1)] + ["CH3"]
         if positions is None: positions = ["1" for x in range(MULTIPLIERS.index(multiplier)+1)]
-        if self.type == "ALKANE":
+        if self.type == ["ALKANE", "ALKYL"]:
             if radical.name == "meth": self.structure = ["CH4"]
         elif self.type in ["ALKENE", "ALKYNE"]:
             a = (1 if self.type == "ALKENE" else 2)
             for pos in positions:
                 self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-a)
                 self.structure[int(pos)] = self.structure[int(pos)][:2] + str(int(self.structure[int(pos)][2:])-a)
+        self.name = multiplier + radical.name + self.name if multiplier != "undef" else radical.name + self.name
+
+
+def process_ramifications(_list):
+    for item in enumerate(_list):
+        for subitem in enumerate(item[1]):
+            if subitem[1].type == "ALKYL" and subitem[0] == 0:
+                if _list[item[0]-2][-1].type in ["POSITION", "MULTIPLIER"]:
+                    subitem[1].ramifications = _list[item[0]-1]
+                    _list[item[0]] = _list[item[0]-2] + _list[item[0]]
+                    del(_list[item[0]-2], _list[item[0]-2])
+                    return _list
 
 
 def tokenize(string):
-    string = ['1,2-di', '1-ethyl-3-', '2-methyl', 'propyl', 'heptylcyclobutane']
+    string = re.split("\[|\]", string)
     tokenized = []
     for item in string:
         tokenized += [([x for x in re.split(pattern, item) if x != ""])]
 
-    tokenized = [(a.split("-")[0] for a in z) for z in tokenized]
+    tokenized = [(list(filter(None, a.split("-"))) for a in z) for z in tokenized]
+    tokenized = [[item for sublist in a for item in sublist] for a in tokenized]
 
     for item in enumerate(tokenized):
         tokenized[item[0]] = [Token(x) for x in item[1]]
@@ -66,6 +79,14 @@ def tokenize(string):
                 if z[item[0]-1].type == "POSITION": del(z[item[0]-1], z[item[0]-2])
                 elif z[item[0]-1].type == "MULTIPLIER": del(z[item[0]-1], z[item[0]-2], z[item[0]-3])
                 else: del(z[item[0]-1])
+            elif item[1].type == "ALKYL":
+                if z[item[0]-1].type == "RADICAL":
+                    # Initial grouping of ramification backbone
+                    item[1].decode(z[item[0]-1])
+                    del(z[item[0]-1])
+
+    while len(tokenized) > 1:
+        tokenized = process_ramifications(tokenized)
 
     print([[a.type for a in z] for z in tokenized])
     print([[a.name for a in z] for z in tokenized])
@@ -78,4 +99,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("1,2-dimethylethane"))
+    print(tokenize("1,2-di[1-[2-methyl]ethyl-3-[2-methyl]propyl]heptylbutane"))

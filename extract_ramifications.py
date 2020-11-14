@@ -13,4 +13,4 @@ def extract_ramifications(string):
     return z
 
 
-print(re.split('\[|\]', "1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane") )
+print(re.split('\[|\]', "1,2-di[1-ethyl-3-[2-methyl]propyl]heptylcyclobutane"))
