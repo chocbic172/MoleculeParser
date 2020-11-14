@@ -43,34 +43,33 @@ class Token:
 
 
 def tokenize(string):
-    string = ['1,2-di[1-ethyl-3-', '[2-methyl]', 'propyl]heptylcyclobutane']
+    string = ['1,2-di', '1-ethyl-3-', '2-methyl', 'propyl', 'heptylcyclobutane']
     tokenized = []
     for item in string:
         tokenized += [([x for x in re.split(pattern, item) if x != ""])]
 
+    tokenized = [(a.split("-")[0] for a in z) for z in tokenized]
+
     for item in enumerate(tokenized):
-        tokenized[item[0]] = Token(item[1])
+        tokenized[item[0]] = [Token(x) for x in item[1]]
 
-    types = [a.name for a in tokenized]
+    for z in tokenized:
+        # First pass - Creates hydrocarbon backbone
+        for item in enumerate(z):
+            if item[1].type in ["ALKANE", "ALKENE", "ALKYNE"]:
+                # Combine elements
+                if z[item[0]-1].type == "RADICAL": item[1].decode(z[item[0]-1])
+                elif z[item[0]-1].type == "MULTIPLIER": item[1].decode(z[item[0]-3], z[item[0]-2].name.split(","), z[item[0]-1].name)
+                elif z[item[0]-1].type == "POSITION": item[1].decode(z[item[0]-2], z[item[0]-1].name.split(","))
 
-    print(types)
+                # Clean up combined elements
+                if z[item[0]-1].type == "POSITION": del(z[item[0]-1], z[item[0]-2])
+                elif z[item[0]-1].type == "MULTIPLIER": del(z[item[0]-1], z[item[0]-2], z[item[0]-3])
+                else: del(z[item[0]-1])
 
-    # First pass - Creates hydrocarbon backbone
-    for item in enumerate(tokenized):
-        if item[1].type in ["ALKANE", "ALKENE", "ALKYNE"]:
-            # Combine elements
-            if tokenized[item[0]-1].type == "RADICAL": item[1].decode(tokenized[item[0]-1])
-            elif tokenized[item[0]-1].type == "MULTIPLIER": item[1].decode(tokenized[item[0]-3], tokenized[item[0]-2].name.split(","), tokenized[item[0]-1].name)
-            elif tokenized[item[0]-1].type == "POSITION": item[1].decode(tokenized[item[0]-2], tokenized[item[0]-1].name.split(","))
-
-            # Clean up combined elements
-            if tokenized[item[0]-1].type == "POSITION": del(tokenized[item[0]-1], tokenized[item[0]-2])
-            elif tokenized[item[0]-1].type == "MULTIPLIER": del(tokenized[item[0]-1], tokenized[item[0]-2], tokenized[item[0]-3])
-            else: del(tokenized[item[0]-1])
-
-    types = [a.type for a in tokenized]
-    print(types)
-    print(tokenized[0].structure)
+    print([[a.type for a in z] for z in tokenized])
+    print([[a.name for a in z] for z in tokenized])
+    print(tokenized[-1][-1].structure)
 
     # Forming Ramifications
     # for item in enumerate(tokenized):
