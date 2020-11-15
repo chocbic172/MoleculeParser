@@ -25,15 +25,21 @@ class Token:
             else: self.type = "POSITION"
 
         self.structure = []
-        self.ramifications = ""
+        self.ramifications = []
 
     def __str__(self):
         return self.type + ":" + self.name
 
+    def complete_structure(self):
+        return self.structure + [structure.complete_structure() for structure in self.ramifications]
+
+    def add_ramification(self, r):
+        print([a.type for a in r])
+
     def decode(self, radical, positions=None, multiplier="undef"):
         self.structure = self.structure = ["CH3"] + ["CH2" for x in range(RADICALS.index(radical.name)-1)] + ["CH3"]
         if positions is None: positions = ["1" for x in range(MULTIPLIERS.index(multiplier)+1)]
-        if self.type == ["ALKANE", "ALKYL"]:
+        if self.type in ["ALKANE", "ALKYL"]:
             if radical.name == "meth": self.structure = ["CH4"]
         elif self.type in ["ALKENE", "ALKYNE"]:
             a = (1 if self.type == "ALKENE" else 2)
@@ -49,6 +55,7 @@ def process_ramifications(_list):
             if subitem[1].type == "ALKYL" and subitem[0] == 0:
                 if _list[item[0]-2][-1].type in ["POSITION", "MULTIPLIER"]:
                     subitem[1].ramifications = _list[item[0]-1]
+                    subitem[1].add_ramification(_list[item[0]-1])
                     _list[item[0]] = _list[item[0]-2] + _list[item[0]]
                     del(_list[item[0]-2], _list[item[0]-2])
                     return _list
@@ -85,18 +92,18 @@ def tokenize(string):
                     item[1].decode(z[item[0]-1])
                     del(z[item[0]-1])
 
-    while len(tokenized) > 1:
-        tokenized = process_ramifications(tokenized)
+    while len(tokenized) > 1: tokenized = process_ramifications(tokenized)
 
     print([[a.type for a in z] for z in tokenized])
     print([[a.name for a in z] for z in tokenized])
-    print(tokenized[-1][-1].structure)
+    print(tokenized[-1][-2].complete_structure())
 
     # Forming Ramifications
     # for item in enumerate(tokenized):
     #     if item[1].type == "POSITION":
     #         if [x for x in tokenized[] if x.type == "ALKYL"]
 
+# TODO: Token.add_ramification() needs to remove Hs in normal structure using SUBRAM radical/positions
 
 if __name__ == "__main__":
     print(tokenize("1,2-di[1-[2-methyl]ethyl-3-[2-methyl]propyl]heptylbutane"))
