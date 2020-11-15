@@ -31,10 +31,15 @@ class Token:
         return self.type + ":" + self.name
 
     def complete_structure(self):
-        return self.structure + [structure.complete_structure() for structure in self.ramifications]
+        return self.structure + [item for sublist in (structure.complete_structure() for structure in self.ramifications) for item in sublist]
 
     def add_ramification(self, r):
-        print([a.type for a in r])
+        for pos in enumerate(r):
+            if pos[1].type == "ALKYL" and r[pos[0]-1].type == "MULTIPLIER":
+                if pos[0] >= 2 and r[pos[0]-2].type != "POSITION": positions = ["1" for x in range(MULTIPLIERS.index(r[pos[0]-1].name)+1)]
+                else: positions = r[pos[0]-2].name.split(",")
+                for pos in positions:
+                    self.structure[int(pos)] = self.structure[int(pos)][:2] + str(int(self.structure[int(pos)][2:])-1)
 
     def decode(self, radical, positions=None, multiplier="undef"):
         self.structure = self.structure = ["CH3"] + ["CH2" for x in range(RADICALS.index(radical.name)-1)] + ["CH3"]
@@ -96,14 +101,13 @@ def tokenize(string):
 
     print([[a.type for a in z] for z in tokenized])
     print([[a.name for a in z] for z in tokenized])
-    print(tokenized[-1][-2].complete_structure())
+    print(tokenized[-1][-3].complete_structure())
 
     # Forming Ramifications
     # for item in enumerate(tokenized):
     #     if item[1].type == "POSITION":
     #         if [x for x in tokenized[] if x.type == "ALKYL"]
 
-# TODO: Token.add_ramification() needs to remove Hs in normal structure using SUBRAM radical/positions
 
 if __name__ == "__main__":
-    print(tokenize("1,2-di[1-[2-methyl]ethyl-3-[2-methyl]propyl]heptylbutane"))
+    print(tokenize("1,2-di[1-ethyl-3-[1-methyl]propyl]heptylcyclobutane"))
