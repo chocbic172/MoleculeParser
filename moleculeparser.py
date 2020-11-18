@@ -57,10 +57,15 @@ class Token:
     def add_function(self, function, positions=None, multiplier="undef"):
         print("ADDING FUNCTION: " + function.name)
         if positions is None: positions = ["1" for x in range(MULTIPLIERS.index(multiplier)+1)]
-        if function.name == "ol":
+        if function.name in ["ol", "thiol"]:
             for pos in positions:
                 self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-1)
-                self.functions.append("OH")
+                self.functions.append("OH" if function.name == "ol" else "SH")
+        elif function.name == "imine":
+            for pos in positions:
+                self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-2)
+                self.functions.append("NH")
+        self.name += function.name
 
 
 def process_ramifications(_list):
@@ -139,4 +144,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("hexan-2,3-diol"))
+    print(tokenize("pentan-2-imine"))
