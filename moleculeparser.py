@@ -8,7 +8,7 @@ MULTIPLIERS = ["undef", "di",  "tri",  "tetra", "penta", "hexa", "hepta", "octa"
 PREFIXES = ["cyclo", "hydroxy", "oxo", "carboxy", "oxycarbonyl", "anoyloxy", "formyl", "oxy", "amido", "amino", "imino", "phenyl",  "mercapto", "phosphino", "arsino", "fluoro", "chloro", "bromo", "iodo"]
 
 
-pattern = "(" + "|".join([x for x in sorted(RADICALS+SUFFIX+MULTIPLIERS+PREFIXES, key=len, reverse=True)]) + ")"
+pattern = "(" + "|".join([x for x in sorted(RADICALS, key=len, reverse=True)] + [x for x in sorted(SUFFIX+MULTIPLIERS+PREFIXES, key=len, reverse=True)]) + ")"
 
 
 class Token:
@@ -26,12 +26,13 @@ class Token:
 
         self.structure = []
         self.ramifications = []
+        self.functions = []
 
     def __str__(self):
         return self.type + ":" + self.name
 
     def complete_structure(self):
-        return self.structure + [item for sublist in (structure.complete_structure() for structure in self.ramifications) for item in sublist]
+        return self.structure + [item for sublist in (structure.complete_structure() for structure in self.ramifications) for item in sublist] + self.functions
 
     def add_ramification(self, r):
         for pos in enumerate(r):
@@ -55,6 +56,11 @@ class Token:
 
     def add_function(self, function, positions=None, multiplier="undef"):
         print("ADDING FUNCTION: " + function.name)
+        if positions is None: positions = ["1" for x in range(MULTIPLIERS.index(multiplier)+1)]
+        if function.name == "ol":
+            for pos in positions:
+                self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-1)
+                self.functions.append("OH")
 
 
 def process_ramifications(_list):
@@ -107,12 +113,24 @@ def tokenize(string):
     # Third pass - prefixes and suffixes
     for item in enumerate(tokenized):
         if item[1].type == "SUFFIX":
+            print("FOUND SUFFIX")
             if tokenized[item[0]-1].type in ["ALKANE", "ALKENE", "ALKYNE"]: tokenized[item[0]-1].add_function(item[1])
-            if tokenized[item[0]-1].type == "MULTIPLIER" and tokenized[item[0]-2].type == "POSITION": tokenized[item[0]-2].add_function(item[1].name)
+            elif tokenized[item[0]-1].type == "POSITION": tokenized[item[0]-2].add_function(item[1], tokenized[item[0]-1].name.split(","))
+            elif tokenized[item[0]-1].type == "MULTIPLIER":
+                if tokenized[item[0]-2].type == "POSITION": tokenized[item[0]-3].add_function(item[1], tokenized[item[0]-2].name.split(","), tokenized[item[0]-1].name)
+                else: tokenized[item[0]-3].add_function(item[1], multiplier=tokenized[item[0]-1].name)
+
+            if tokenized[item[0]-1].type in ["ALKANE", "ALKENE", "ALKYNE"]: del(tokenized[item[0]])
+            elif tokenized[item[0]-1].type == "POSITION": del(tokenized[item[0]], tokenized[item[0]-1])
+            elif tokenized[item[0]-1].type == "MULTIPLIER":
+                if tokenized[item[0]-2].type == "POSITION": del(tokenized[item[0]], tokenized[item[0]-1], tokenized[item[0]-2])
+                else: del(tokenized[item[0]], tokenized[item[0]-1])
+
+
 
     print([z.type for z in tokenized])
     print([z.name for z in tokenized])
-    print(tokenized[-1].complete_structure())
+    print(tokenized[0].complete_structure())
 
     # Forming Ramifications
     # for item in enumerate(tokenized):
@@ -121,4 +139,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("ethan-2-ol"))
+    print(tokenize("hexan-2,3-diol"))
