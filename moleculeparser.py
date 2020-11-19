@@ -61,10 +61,14 @@ class Token:
             for pos in positions:
                 self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-1)
                 self.functions.append("OH" if function.name == "ol" else "SH")
-        elif function.name == "imine":
+        elif function.name in ["imine", "one", "al"]:
             for pos in positions:
                 self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-2)
-                self.functions.append("NH")
+                self.functions.append("NH" if function.name == "imine" else "O")
+        elif function.name in ["oic acid", "carboxylic acid"]:
+            for pos in positions:
+                self.structure[int(pos)-1] = self.structure[int(pos)-1][:2] + str(int(self.structure[int(pos)-1][2:])-3)
+                self.functions.extend(["OH","O"])
         self.name += function.name
 
 
@@ -118,7 +122,6 @@ def tokenize(string):
     # Third pass - prefixes and suffixes
     for item in enumerate(tokenized):
         if item[1].type == "SUFFIX":
-            print("FOUND SUFFIX")
             if tokenized[item[0]-1].type in ["ALKANE", "ALKENE", "ALKYNE"]: tokenized[item[0]-1].add_function(item[1])
             elif tokenized[item[0]-1].type == "POSITION": tokenized[item[0]-2].add_function(item[1], tokenized[item[0]-1].name.split(","))
             elif tokenized[item[0]-1].type == "MULTIPLIER":
@@ -132,7 +135,6 @@ def tokenize(string):
                 else: del(tokenized[item[0]], tokenized[item[0]-1])
 
 
-
     print([z.type for z in tokenized])
     print([z.name for z in tokenized])
     print(tokenized[0].complete_structure())
@@ -144,4 +146,4 @@ def tokenize(string):
 
 
 if __name__ == "__main__":
-    print(tokenize("pentan-2-imine"))
+    print(tokenize("ethanoic acid"))
